@@ -601,9 +601,9 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled ABAB segment */
         i = s->training_count + 1;
-        ang = angle - s->last_angles[i & 1];
+        ang = (int32_t) ((uint32_t) angle - (uint32_t) s->last_angles[i & 1]);
         s->last_angles[i & 1] = angle;
-        s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
+        s->diff_angles[i & 0xF] = (int32_t) ((uint32_t) s->diff_angles[(i - 2) & 0xF] + (uint32_t) (ang >> 4));
         if ((ang > DDS_PHASE(45.0f)  ||  ang < DDS_PHASE(-45.0f))  &&  s->training_count >= 13)
         {
             /* We seem to have a phase reversal */
@@ -617,7 +617,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             if (i > 1)
             {
                 j = i & 0xF;
-                ang = (s->diff_angles[j] + s->diff_angles[j | 0x1])/(i - 1);
+                ang = (int32_t) ((uint32_t) s->diff_angles[j] + (uint32_t) s->diff_angles[j | 0x1])/(i - 1);
                 if (s->bit_rate == 4800)
                     s->carrier_phase_rate += 16*(ang/10);
                 else
@@ -641,7 +641,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer
                buffer, as well as the carrier phase, for this to play out nicely. */
-            angle += DDS_PHASE(180.0f);
+            angle = (int32_t) ((uint32_t) angle + (uint32_t) DDS_PHASE(180.0f));
 #if defined(SPANDSP_USE_FIXED_POINT)
             z16 = complex_seti16(fixed_cos(angle >> 16), -fixed_sin(angle >> 16));
             for (i = 0;  i < V27TER_EQUALIZER_LEN;  i++)
